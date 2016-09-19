@@ -1,0 +1,14 @@
+[package]
+name = "rassembler"
+version = "0.1.0"
+authors = ["Peter Reid <peter.d.reid@gmail.com>"]
+build = "build.rs"
+
+[dependencies.coff_writer]
+path = "../coff_writer"
+
+[dependencies.elf_writer]
+path = "../elf_writer"
+
+[dependencies]
+byteorder = "*"
