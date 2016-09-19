@@ -6,10 +6,8 @@ mod assembler;
 pub mod parser;
 mod x64data;
 mod compiler;
-mod ops;
 
-pub use ops::FlaggedAssembler;
-pub use assembler::Assembler; 
+pub use assembler::{Assembler, FlaggedAssembler}; 
 
 #[test]
 fn it_works() {
