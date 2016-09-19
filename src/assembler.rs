@@ -9,7 +9,7 @@ use std::io;
 use std::env;
 use coff_writer::{Coff, Section, Symbol, MACHINE_AMD64};
 use elf_writer::{self, Elf};
-
+use std::convert::Into;
 
 fn write_archive_header<W: Write>(w: &mut W, singleton_file_contents: &[u8]) -> io::Result<()> {
     try!(w.write_all(b"!<arch>\n"));
@@ -246,9 +246,9 @@ pub trait CollectableToArgs {
     fn collect_into(self, args: &mut Vec<Arg>);
 }
 
-impl CollectableToArgs for Arg {
+impl<T: Into<Arg>> CollectableToArgs for T {
     fn collect_into(self, args: &mut Vec<Arg>) {
-        args.push(self);
+        args.push(self.into());
     }
 }
 
@@ -272,6 +272,23 @@ impl<X: CollectableToArgs, Y: CollectableToArgs, Z: CollectableToArgs> Collectab
         self.0.collect_into(args);
         self.1.collect_into(args);
         self.2.collect_into(args);
+    }
+}
+impl<W: CollectableToArgs, X: CollectableToArgs, Y: CollectableToArgs, Z: CollectableToArgs> CollectableToArgs for (W, X, Y, Z) {
+    fn collect_into(self, args: &mut Vec<Arg>) {
+        self.0.collect_into(args);
+        self.1.collect_into(args);
+        self.2.collect_into(args);
+        self.3.collect_into(args);
+    }
+}
+impl<A: CollectableToArgs, B: CollectableToArgs, C: CollectableToArgs, D: CollectableToArgs, E: CollectableToArgs> CollectableToArgs for (A, B, C, D, E) {
+    fn collect_into(self, args: &mut Vec<Arg>) {
+        self.0.collect_into(args);
+        self.1.collect_into(args);
+        self.2.collect_into(args);
+        self.3.collect_into(args);
+        self.4.collect_into(args);
     }
 }
 

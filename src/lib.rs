@@ -6,8 +6,10 @@ mod assembler;
 pub mod parser;
 mod x64data;
 mod compiler;
+mod regs;
 
 pub use assembler::{Assembler, FlaggedAssembler}; 
+pub use regs::HWord;
 
 #[test]
 fn it_works() {

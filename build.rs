@@ -1860,6 +1860,11 @@ fn chr(num: usize) -> char {
     (('a' as u8) + (num as u8)) as char
 }
 
+fn upper_chr(num: usize) -> char {
+    assert!(num < 26);
+    (('A' as u8) + (num as u8)) as char
+}
+
 
 fn close_parens(mut expr: String) -> String {
     let paren_count = expr.chars().filter(|c| *c=='(').count();
@@ -1975,7 +1980,7 @@ fn main() {
             }
             pattern_so_far.push(chr(arg_idx));
             
-            arg_bindings.push_str("Arg");
+            arg_bindings.push(upper_chr(arg_idx));
         }
         pattern_for_arg_count.insert(max_arg_count, close_parens(pattern_so_far));
         
@@ -1988,7 +1993,14 @@ fn main() {
             arg_bindings.push('>');
         }
         
-        lines.push(format!("    pub fn {}(&mut self{}) {{", name, arg_bindings));
+        let trait_bounds = if max_arg_count == 0 {
+                String::new()
+            } else {
+                let intos: Vec<String> = (0..max_arg_count).map(|idx| format!("{}: Into<Arg>", upper_chr(idx))).collect();
+                format!("<{}>", intos.join(", "))
+            };
+        
+        lines.push(format!("    pub fn {}{}(&mut self{}) {{", name, trait_bounds, arg_bindings));
         
         lines.push(format!("        static FORMS: [Opdata; {}] = [", opdatas.len()));
         for opdata in opdatas {
@@ -1996,8 +2008,8 @@ fn main() {
         }
         lines.push(format!("        ];"));
         lines.push(format!("        self.encode({:?}, &FORMS[..],  {});", name, 
-              if pattern_for_arg_count.len() == 1 {
-                  format!("[{}].to_vec()", arg_names.join(", "))
+              if arg_names.len() == 0 {
+                  "Vec::new()".to_string()
               } else {
                   format!("collect_args(({}))", arg_names.join(", "))
               }));
