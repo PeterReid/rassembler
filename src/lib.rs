@@ -9,7 +9,7 @@ mod compiler;
 mod regs;
 
 pub use assembler::{Assembler, FlaggedAssembler}; 
-pub use regs::HWord;
+pub use regs::{Byte, QWord, OWord, HWord};
 
 #[test]
 fn it_works() {

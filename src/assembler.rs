@@ -10,6 +10,7 @@ use std::env;
 use coff_writer::{Coff, Section, Symbol, MACHINE_AMD64};
 use elf_writer::{self, Elf};
 use std::convert::Into;
+use byteorder::{LittleEndian, ByteOrder};
 
 fn write_archive_header<W: Write>(w: &mut W, singleton_file_contents: &[u8]) -> io::Result<()> {
     try!(w.write_all(b"!<arch>\n"));
@@ -86,6 +87,11 @@ impl Assembler {
                 Stmt::Var(ImmediateValue::I64(x), Size::BYTE) => {
                     result.push(x as u8);
                 }
+                Stmt::Var(ImmediateValue::I64(x), Size::DWORD) => {
+                    let mut xs = [0u8; 4];
+                    LittleEndian::write_i32(&mut xs[..], x as i32);
+                    result.extend(xs.iter());
+                }
                 _ => { panic!("Unimplemented statement: {:?}", stmt); }
             }
         }
@@ -102,12 +108,6 @@ impl Assembler {
         let template_bytes =
             if false {
                 self.make_elf_file()
-/*                let mut bs = Vec::new();
-                File::open(
-                    // "/home/pdr/clinktest/gccbuild/libfoo.a"
-                    "/home/pdr/clinktest/nasmbuild/foo.o"
-                ).expect("no file to copy").read_to_end(&mut bs).unwrap();
-                bs*/
             } else {
                 self.make_object_file()
             };

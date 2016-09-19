@@ -30,6 +30,12 @@ pub enum Arg {
     Invalid // placeholder value
 }
 
+impl Into<Arg> for i8 {
+    fn into(self) -> Arg {
+        Arg::Immediate(ImmediateValue::I64(self as i64), Some(Size::BYTE))
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct MemoryRef {
     pub index:      Option<Register>,
@@ -351,7 +357,7 @@ impl Size {
 
             
             
-            
+**            
             
             
             "Rb" => (Size::BYTE,  RegFamily::LEGACY),
