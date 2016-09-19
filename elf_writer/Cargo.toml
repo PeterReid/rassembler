@@ -1,0 +1,8 @@
+[package]
+name = "elf_writer"
+version = "0.1.0"
+authors = ["pdr"]
+
+[dependencies]
+byteorder = "*"
+
