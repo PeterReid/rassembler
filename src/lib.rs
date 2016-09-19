@@ -7,9 +7,10 @@ pub mod parser;
 mod x64data;
 mod compiler;
 mod regs;
+mod object_file;
 
 pub use assembler::{Assembler, FlaggedAssembler}; 
-pub use regs::{Byte, QWord, OWord, HWord};
+pub use regs::{Byte, DWord, QWord, OWord, HWord};
 
 #[test]
 fn it_works() {

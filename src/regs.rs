@@ -60,6 +60,36 @@ reg_enum! {
 }
 
 reg_enum! {
+    DWord: DWORD = [
+        Eax => RAX;
+        Ecx => RCX;
+        Edx => RDX;
+        Ebx => RBX;
+        Esp => RSP;
+        Ebp => RBP;
+        Esi => RSI;
+        Edi => RDI;
+        
+        R0d => RAX;
+        R1d => RCX;
+        R2d => RDX;
+        R3d => RBX;
+        R4d => RSP;
+        R5d => RBP;
+        R6d => RSI;
+        R7d => RDI;
+        R8d => R8;
+        R9d => R9;
+        R10d => R10;
+        R11d => R11;
+        R12d => R12;
+        R13d => R13;
+        R14d => R14;
+        R15d => R15;
+    ]
+}
+            
+reg_enum! {
     QWord: QWORD = [
         Rax => RAX;
         Rcx => RCX;

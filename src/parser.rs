@@ -32,9 +32,15 @@ pub enum Arg {
 
 impl Into<Arg> for i8 {
     fn into(self) -> Arg {
-        Arg::Immediate(ImmediateValue::I64(self as i64), Some(Size::BYTE))
+        Arg::Immediate(ImmediateValue::I64(self as i64), None)
     }
 }
+impl Into<Arg> for i32 {
+    fn into(self) -> Arg {
+        Arg::Immediate(ImmediateValue::I64(self as i64), None)
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub struct MemoryRef {
