@@ -8,7 +8,7 @@ macro_rules! reg_enum {
     ]
       
     ) => {
-        #[derive(Debug, Copy, Clone)]
+        #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
         pub enum $name {
             $($case_name),*
         }
@@ -121,13 +121,7 @@ reg_enum! {
 
 impl QWord {
     pub fn value_at(self) -> Arg {
-        Arg::Indirect(MemoryRef{
-            index: None,
-            scale: 0,
-            base: Some(self.into()),
-            disp: None,
-            size: None,
-        })
+        self.value_at_offset(0)
     }
     
     pub fn value_at_offset(self, offset: i32) -> Arg {
@@ -135,7 +129,11 @@ impl QWord {
             index: None,
             scale: 0,
             base: Some(self.into()),
-            disp: Some(ImmediateValue::I64(offset as i64)),
+            disp: if offset != 0 {
+                    Some(ImmediateValue::I64(offset as i64))
+                } else {
+                    None
+                },
             size: None,
         })
     }

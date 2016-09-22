@@ -4,8 +4,6 @@ use std::ops::{Deref, DerefMut};
 use object_file::{ObjectFile, ExportedFunction};
 
 use std::fs::File;
-use std::io::ErrorKind;
-use std::io;
 use std::env;
 use std::convert::Into;
 use byteorder::{LittleEndian, ByteOrder};
