@@ -40,6 +40,11 @@ impl Into<Arg> for i32 {
         Arg::Immediate(ImmediateValue::I64(self as i64), None)
     }
 }
+impl Into<Arg> for u64 {
+    fn into(self) -> Arg {
+        Arg::Immediate(ImmediateValue::U64(self), None)
+    }
+}
 
 
 #[derive(Debug, Clone)]

@@ -1,7 +1,8 @@
-use compiler::{StmtBuffer, Stmt, Opdata, compile_op};
-use parser::{Ident, Arg, Size, ImmediateValue};
+use x64::compiler::{StmtBuffer, Stmt, Opdata, compile_op};
+use x64::parser::{Ident, Arg, Size, ImmediateValue};
 use std::ops::{Deref, DerefMut};
 use object_file::{ObjectFile, ExportedFunction};
+use std::collections::HashMap;
 
 use std::fs::File;
 use std::env;
@@ -27,6 +28,13 @@ impl FlaggedAssembler {
 
 include!(concat!(env!("OUT_DIR"), "/ops.rs"));
 
+#[derive(Debug)]
+struct JumpToResolve {
+    label: String,
+    from: usize,
+    size: Size,
+}
+
 impl Assembler {
     pub fn new() -> Assembler {
         Assembler{
@@ -41,12 +49,31 @@ impl Assembler {
         self.inner.buffer.push(Stmt::GlobalLabel(name.to_string()));
     }
     
+    pub fn constant(&mut self, xs: &[u8]) {
+        for x in xs {
+            self.inner.buffer.push(Stmt::Const(*x));
+        }
+    }
+    
+    pub fn local(&mut self, name: &str) {
+        self.inner.buffer.push(Stmt::LocalLabel(name.to_string()));
+    }
+    
+    pub fn align(&mut self, alignment_bytes: u64) {
+        self.inner.buffer.push(Stmt::Align(ImmediateValue::U64(alignment_bytes)));
+    }
+    
     pub fn dump(&self) -> ObjectFile {
         let mut result = ObjectFile{
             code: Vec::new(),
             functions: Vec::new(),
         };
+        
+        let mut labels = HashMap::new();
+        let mut jumps_to_resolve = Vec::new();
+        
         for stmt in &self.inner.buffer {
+            println!("{:?}", stmt);
             match *stmt {
                 Stmt::Const(x) => { result.code.push(x); }
                 Stmt::Var(ImmediateValue::I64(x), Size::BYTE) => {
@@ -57,15 +84,59 @@ impl Assembler {
                     LittleEndian::write_i32(&mut xs[..], x as i32);
                     result.code.extend(xs.iter());
                 }
+                Stmt::Var(ImmediateValue::U64(x), Size::QWORD) => {
+                    let mut xs = [0u8; 8];
+                    LittleEndian::write_u64(&mut xs[..], x);
+                    result.code.extend(xs.iter());
+                }
                 Stmt::GlobalLabel(ref ident) => {
                     result.functions.push(ExportedFunction{
                         offset: result.code.len() as u32,
                         name: ident.clone(),
                     });
                 }
+                Stmt::LocalLabel(ref ident) => {
+                    labels.insert(ident.clone(), result.code.len());
+                }
+                Stmt::ForwardJumpTarget(ref ident, size) => {
+                    jumps_to_resolve.push(JumpToResolve{
+                        label: ident.clone(),
+                        size: size,
+                        from: result.code.len(),
+                    });
+                }
+                Stmt::Align(ImmediateValue::U64(x)) => {
+                    if x > 1024 {
+                        panic!("Excessive alignment request: {}", x);
+                    }
+                    let x = x as usize;
+                    while result.code.len() % x != 0 {
+                        result.code.push(0x90);
+                    }
+                }
                 _ => { panic!("Unimplemented statement: {:?}", stmt); }
             }
         }
+        
+        println!("Jumps = {:?}", jumps_to_resolve);
+        
+        for jump_to_resolve in jumps_to_resolve {
+            let target_addr = match labels.get(&jump_to_resolve.label) {
+                Some(target_addr) => *target_addr,
+                None => panic!("Unresolved address: {}", jump_to_resolve.label)
+            };
+            
+            let jump_amount = (target_addr as i32) - ((jump_to_resolve.from) as i32);
+            match jump_to_resolve.size {
+                Size::DWORD => {
+                    LittleEndian::write_i32(&mut result.code[jump_to_resolve.from - 4..], jump_amount);
+                },
+                _ => {
+                    panic!("Unimplemented jump size")
+                }
+            }
+        }
+        
         result
     }
     

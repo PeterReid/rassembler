@@ -1,4 +1,4 @@
-use parser::{Register, MemoryRef, ImmediateValue, Size, RegId, RegKind, Arg};
+use x64::parser::{Register, MemoryRef, ImmediateValue, Size, RegId, RegKind, Arg, JumpType};
 
 macro_rules! reg_enum {
     ( $name:ident: $size:ident = [
@@ -12,7 +12,16 @@ macro_rules! reg_enum {
         pub enum $name {
             $($case_name),*
         }
-    
+        
+        impl $name {
+            pub fn from_index(index: usize) -> $name {
+                $(
+                    if RegId::$reg_id.code() as usize == index { return $name::$case_name; }
+                )*
+                panic!("Invalid index for register")
+            }
+        }
+        
         impl Into<Register> for $name {
             fn into(self) -> Register {
                 match self {
@@ -181,4 +190,9 @@ reg_enum! {
     ]
 }
 
-
+pub fn rip_relative(label: &str) -> Arg { 
+    Arg::IndirectJumpTarget(JumpType::Forward(label.to_string()), None)
+}
+pub fn rip_nonrelative(label: &str) -> Arg { 
+    Arg::JumpTarget(JumpType::Forward(label.to_string()), None)
+}

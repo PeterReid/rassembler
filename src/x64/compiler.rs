@@ -1,5 +1,5 @@
-use parser::{self, Item, Arg, Ident, MemoryRef, Register, RegKind, RegFamily, RegId, Size, LabelType, JumpType, ImmediateValue};
-use x64data::flags::*;
+use x64::parser::{self, Item, Arg, Ident, MemoryRef, Register, RegKind, RegFamily, RegId, Size, LabelType, JumpType, ImmediateValue};
+use x64::x64data::flags::*;
 
 use std::mem::swap;
 use std::slice;
