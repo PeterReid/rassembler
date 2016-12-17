@@ -65,14 +65,16 @@ pub enum LabelType {
     //Dynamic(P<ast::Expr>), // => expr :
 }
 
+pub type JumpTarget = u64;
+
 #[derive(Debug, Clone)]
 pub enum JumpType {
     // note: these symbol choices try to avoid stuff that is a valid starting symbol for parse_expr
     // in order to allow the full range of expressions to be used. the only currently existing ambiguity is
     // with the symbol <, as this symbol is also the starting symbol for the universal calling syntax <Type as Trait>.method(args)
     Global(Ident),         // -> label
-    Backward(Ident),       //  > label
-    Forward(Ident),        //  < label
+    Backward(JumpTarget),       //  > label
+    Forward(JumpTarget),        //  < label
     //Dynamic(P<ast::Expr>), // => expr
 }
 

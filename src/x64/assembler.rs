@@ -1,8 +1,8 @@
 use x64::compiler::{StmtBuffer, Stmt, Opdata, compile_op};
-use x64::parser::{Ident, Arg, Size, ImmediateValue};
+use x64::parser::{Ident, Arg, Size, JumpTarget, ImmediateValue};
 use std::ops::{Deref, DerefMut};
 use object_file::{ObjectFile, ExportedFunction};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use std::fs::File;
 use std::env;
@@ -18,6 +18,8 @@ pub struct Assembler {
 pub struct FlaggedAssembler {
     buffer: StmtBuffer,
     prefixes: Vec<Ident>,
+    jump_target_counter: JumpTarget,
+    allocated_jump_targets: HashSet<JumpTarget>,
 }
 
 impl FlaggedAssembler {
@@ -30,7 +32,7 @@ include!(concat!(env!("OUT_DIR"), "/ops.rs"));
 
 #[derive(Debug)]
 struct JumpToResolve {
-    label: String,
+    target: JumpTarget,
     from: usize,
     size: Size,
 }
@@ -41,6 +43,8 @@ impl Assembler {
             inner: FlaggedAssembler{
                 buffer: Vec::new(),
                 prefixes: Vec::new(),
+                jump_target_counter: 5050,
+                allocated_jump_targets: HashSet::new(),
             },
         }
     }
@@ -55,8 +59,28 @@ impl Assembler {
         }
     }
     
-    pub fn local(&mut self, name: &str) {
-        self.inner.buffer.push(Stmt::LocalLabel(name.to_string()));
+    pub fn allocate_local(&mut self) -> JumpTarget {
+        loop {
+            let ret = self.jump_target_counter;
+            
+            // I want this to be deterministic but not terribly likely to be duplicated between different Assembler instances
+            self.jump_target_counter = self.jump_target_counter.wrapping_add(47).wrapping_add(self.buffer.len() as u64).wrapping_mul(199);
+            
+            if !self.allocated_jump_targets.contains(&ret) {
+                self.allocated_jump_targets.insert(ret);
+                return ret;
+            }
+        }
+    }
+    
+    pub fn place_local(&mut self, target: JumpTarget) {
+        self.inner.buffer.push(Stmt::LocalLabel(target));
+    }
+    
+    pub fn local(&mut self) -> JumpTarget {
+        let ret = self.allocate_local();
+        self.place_local(ret);
+        ret
     }
     
     pub fn align(&mut self, alignment_bytes: u64) {
@@ -95,12 +119,12 @@ impl Assembler {
                         name: ident.clone(),
                     });
                 }
-                Stmt::LocalLabel(ref ident) => {
-                    labels.insert(ident.clone(), result.code.len());
+                Stmt::LocalLabel(target) => {
+                    labels.insert(target, result.code.len());
                 }
-                Stmt::ForwardJumpTarget(ref ident, size) => {
+                Stmt::ForwardJumpTarget(target, size) => {
                     jumps_to_resolve.push(JumpToResolve{
-                        label: ident.clone(),
+                        target: target,
                         size: size,
                         from: result.code.len(),
                     });
@@ -121,9 +145,9 @@ impl Assembler {
         println!("Jumps = {:?}", jumps_to_resolve);
         
         for jump_to_resolve in jumps_to_resolve {
-            let target_addr = match labels.get(&jump_to_resolve.label) {
+            let target_addr = match labels.get(&jump_to_resolve.target) {
                 Some(target_addr) => *target_addr,
-                None => panic!("Unresolved address: {}", jump_to_resolve.label)
+                None => panic!("Unresolved address: {}", jump_to_resolve.target)
             };
             
             let jump_amount = (target_addr as i32) - ((jump_to_resolve.from) as i32);

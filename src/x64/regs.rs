@@ -1,4 +1,4 @@
-use x64::parser::{Register, MemoryRef, ImmediateValue, Size, RegId, RegKind, Arg, JumpType};
+use x64::parser::{Register, MemoryRef, ImmediateValue, Size, RegId, RegKind, Arg, JumpType, JumpTarget};
 
 macro_rules! reg_enum {
     ( $name:ident: $size:ident = [
@@ -190,9 +190,9 @@ reg_enum! {
     ]
 }
 
-pub fn rip_relative(label: &str) -> Arg { 
-    Arg::IndirectJumpTarget(JumpType::Forward(label.to_string()), None)
+pub fn rip_relative(target: JumpTarget) -> Arg { 
+    Arg::IndirectJumpTarget(JumpType::Forward(target), None)
 }
-pub fn rip_nonrelative(label: &str) -> Arg { 
-    Arg::JumpTarget(JumpType::Forward(label.to_string()), None)
+pub fn rip_nonrelative(label: JumpTarget) -> Arg { 
+    Arg::JumpTarget(JumpType::Forward(label), None)
 }

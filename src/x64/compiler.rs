@@ -1,4 +1,4 @@
-use x64::parser::{self, Item, Arg, Ident, MemoryRef, Register, RegKind, RegFamily, RegId, Size, LabelType, JumpType, ImmediateValue};
+use x64::parser::{self, Item, Arg, Ident, MemoryRef, Register, RegKind, RegFamily, RegId, Size, LabelType, JumpType, JumpTarget, ImmediateValue};
 use x64::x64data::flags::*;
 
 use std::mem::swap;
@@ -14,6 +14,7 @@ pub type Flags = u32;
 pub type StmtBuffer = Vec<Stmt>;
 pub type ExtCtxt = ();
 
+
 #[derive(Clone, Debug)]
 pub enum Stmt {
     Const(u8),
@@ -27,12 +28,12 @@ pub enum Stmt {
     Align(ImmediateValue),
 
     GlobalLabel(Ident),
-    LocalLabel(Ident),
+    LocalLabel(JumpTarget),
     //DynamicLabel(P<ast::Expr>),
 
     GlobalJumpTarget(Ident, Size),
-    ForwardJumpTarget(Ident, Size),
-    BackwardJumpTarget(Ident, Size),
+    ForwardJumpTarget(JumpTarget, Size),
+    BackwardJumpTarget(JumpTarget, Size),
     //DynamicJumpTarget(P<ast::Expr>, Size)
 }
 
@@ -472,8 +473,8 @@ pub fn compile_op(buffer: &mut StmtBuffer, op: Ident, prefixes: Vec<Ident>, mut 
 
         buffer.push(match target {
             JumpType::Global(ident)   => Stmt::GlobalJumpTarget(ident, Size::DWORD),
-            JumpType::Forward(ident)  => Stmt::ForwardJumpTarget(ident, Size::DWORD),
-            JumpType::Backward(ident) => Stmt::BackwardJumpTarget(ident, Size::DWORD),
+            JumpType::Forward(target)  => Stmt::ForwardJumpTarget(target, Size::DWORD),
+            JumpType::Backward(target) => Stmt::BackwardJumpTarget(target, Size::DWORD),
             //JumpType::Dynamic(expr)   => Stmt::DynamicJumpTarget(expr, Size::DWORD)
         });
     }
