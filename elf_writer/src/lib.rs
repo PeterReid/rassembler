@@ -35,6 +35,7 @@ pub enum Architecture {
     X86,
     Arm,
     X8664,
+    Avr,
 }
 impl Architecture {
     fn as_u8(self) -> u8 {
@@ -42,6 +43,7 @@ impl Architecture {
             Architecture::X86 => 0x03,
             Architecture::Arm => 0x27,
             Architecture::X8664 => 0x3E,
+            Architecture::Avr => 0x53,
         }
     }
 }
@@ -229,12 +231,15 @@ impl<'a> Elf<'a> {
         }));
         try!(w.write_u32::<LittleEndian>(0)); // flags
         try!(w.write_u16::<LittleEndian>(match self.word_size {
-            WordSize::Bits32 => 52,
-            WordSize::Bits64 => 64,
+            WordSize::Bits32 => 0x34,
+            WordSize::Bits64 => 0x40,
         }));
         try!(w.write_u16::<LittleEndian>(0)); // program header entry size
         try!(w.write_u16::<LittleEndian>(0)); // program header entry count
-        try!(w.write_u16::<LittleEndian>(64)); // section header entry size
+        try!(w.write_u16::<LittleEndian>(match self.word_size {
+            WordSize::Bits32 => 0x28,
+            WordSize::Bits64 => 0x40,
+        })); // section header entry size
         try!(w.write_u16::<LittleEndian>(section_headers.len() as u16)); // section header entry count
         try!(w.write_u16::<LittleEndian>(index_of_section_name_table)); // not sure yet...
 
